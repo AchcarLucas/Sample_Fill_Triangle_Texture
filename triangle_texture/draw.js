@@ -13,16 +13,37 @@ function Interpolate(min, max, gradient){
 
 // Rasterização em X
 function processScanLine(data, pa, pb, pc, pd, color){
-	// Calcula o gradient nos pontos Y tanto para achar os pontos startX e endX 
+	// Calcula o gradient nos pontos Y tanto para achar os pontos startX e endX (0 a 1)
 	var gradient1 = pa.y != pb.y ? (data.y - pa.y) / (pb.y - pa.y) : 1;
 	var gradient2 = pc.y != pd.y ? (data.y - pc.y) / (pd.y - pc.y) : 1;
 		
 	// Calcula o X inicial e o X final
 	var startX = Interpolate(pa.x, pb.x, gradient1);
 	var endX = Interpolate(pc.x, pd.x, gradient2);
+
+	// Será usado para o deep buffer
+	var startZ = Interpolate(pa.z, pb.z, gradient1);
+	var endZ = Interpolate(pc.z, pd.z, gradient2);
 	
+	// X do UV
+	var startU 	= Interpolate(pa.CoordUV.u, pb.CoordUV.u, gradient1);
+	var endU 	= Interpolate(pc.CoordUV.u, pd.CoordUV.u, gradient2);
+	
+	// Y do UV
+	var startV 	= Interpolate(pa.CoordUV.v, pb.CoordUV.v, gradient1);
+	var endV 	= Interpolate(pc.CoordUV.v, pd.CoordUV.v, gradient2);
+
 	for(var x = startX; x < endX; x++){
-		drawPixel({x:x, y:data.y}, color);
+		var gradient = (x - startX) / (endX - startX);
+		
+ 		var z = Interpolate(startZ, endZ, gradient);
+		
+		var u = Interpolate(startU, endU, gradient);
+        var v = Interpolate(startV, endV, gradient); // Sempre vai ser igual ....
+		
+		rgba = Map(u, v);
+
+		drawPixel({x:x, y:data.y}, rgbToHex(rgba.r, rgba.g, rgba.b));
 	}
 };
 
@@ -73,18 +94,19 @@ function drawTriangle(v1, v2, v3, color){
 	}
 	
 	// Primeiro caso de triangulo
-    // P1
+    // P1 (uv)
     // -
     // -- 
     // - -
     // -  -
-    // -   - P2
+    // -   - P2 (uv)
     // -  -
     // - -
     // -
-    // P3
+    // P3 (uv)
 	if(dv1v2 > dv1v3){
 		// Vai de v1.y até v3.y decendo no polygon
+		//for(var y = parseInt(v1.y); y < parseInt(v3.y); y++){
 		for(var y = parseInt(v1.y); y < parseInt(v3.y); y++){
 			// se o y for menor que p2.y, está na parte de baixo do polygon
 			if(y < v2.y){
@@ -97,18 +119,18 @@ function drawTriangle(v1, v2, v3, color){
 		}
 	}
 	// Segundo caso de triangulo
-    //       P1
-    //        -
-    //       -- 
-    //      - -
-    //     -  -
-    // P2 -   - 
-    //     -  -
-    //      - -
-    //        -
-    //       P3
+    //            P1 (uv)
+    //            -
+    //           -- 
+    //          - -
+    //         -  -
+    // (uv )P2 -  - 
+    //         -  -
+    //          - -
+    //           -
+    //           P3 (uv)
 	else{
-		for(var y = parseInt(v1.y); y < parseInt(v3).y; y++){
+		for(var y = parseInt(v1.y); y < parseInt(v3.y); y++){
 			if(y < v2.y){
 				processScanLine({y:y}, v1, v2, v1, v3, rgbToHex(255, 0, 0));
 			}else{
@@ -118,18 +140,40 @@ function drawTriangle(v1, v2, v3, color){
 	}
 };
 
+// Mapping U V na textura
+function Map(u, v){
+	if(texture_data == null){
+		return rgbToHex(255, 255, 255);
+	}
+	
+	var u = Math.abs(parseInt(u * texture_data.width) % texture_data.width);
+	var v = Math.abs(parseInt(v * texture_data.height) % texture_data.height);
+	
+	var rgba = getPixel(texture_data, u, v);
+	return rgba;
+};
+
 function draw(content){
 	// LIMPA TELA
 	content.clearRect(0, 0, canvas.width, canvas.height);
 	
-	var v1 = {x: 100, y: 000, z: 0, u:0, v:0};
-	var v2 = {x: 500, y: 200, z: 0, u:0, v:1};
-	var v3 = {x: 100, y: 300, z: 0, u:1, v:0};
+	var v1 = {x: 0, y: 0, z: 0, CoordUV:{u:0, v:0}};
+	var v2 = {x: 500, y: 300, z: 0, CoordUV:{u:1, v:1}};
+	var v3 = {x: 100, y: 200, z: 0, CoordUV:{u:0, v:1}};
+	
+	/*var v1 = {x: 0.5, y: 0.5, z: 0, CoordUV:{u:0, v:0}};
+	var v2 = {x: 1, y: 0, z: 0, CoordUV:{u:1, v:1}};
+	var v3 = {x: 0, y: 0, z: 0, CoordUV:{u:0, v:1}};*/
 	
 	drawTriangle(v1, v2, v3, 0);
 	
-	if(texture_data != null){
-	}
+	/*var y = 0.25;
+	var factor = (y - v1.y) / (v2.y - v1.y);
+	var factor = 1;
+	var startX = Interpolate(v1.x, v2.x, factor);
+	var endX = Interpolate(v1.x, v3.x, factor);
+	
+	console.log("Y: " + y + "  "+ startX, endX, factor);*/
 	
 	content.font = "10px Arial";
 	content.fillStyle = rgbToHex(255, 0, 0);

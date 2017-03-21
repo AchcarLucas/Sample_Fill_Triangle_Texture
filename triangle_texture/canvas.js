@@ -33,7 +33,7 @@ function getPixel(imageData, x, y) {
     var g = imageData.data[index+1];
     var b = imageData.data[index+2];
     var a = imageData.data[index+3];
-	return [r, g, b, a];
+	return {r:r, g:g, b:b, a:a};
 }
 
 function rgbToHex(r, g, b) {
