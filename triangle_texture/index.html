@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<title>Base</title>
+		
+		<script src="../modules/jquery/jquery-3.2.0.min.js"></script>
+		<script src="global_var.js"></script>
+		<script src="canvas.js"></script>
+		<script src="main.js"></script>
+		<script src="update.js"></script>
+		<script src="draw.js"></script>
+		<link rel="stylesheet" href="style.css"/>
+	</head>
+	<body>
+		<canvas id="canvas" width="640" height="360">
+		Your browser does not support the HTML5 canvas tag.</canvas>
+		<label for="fps_controller">FPS Controller</label>
+		<input type="range" id="fps_controller" max="60" min="10" value="30">
+		<output name="fps_range" id="fps_range">30 FPS</output>
+
+		</input>
+		
+		<div>
+			<input type="file" id="texture" name="texture">
+		</div>
+	</body>
+</html>
