@@ -15,14 +15,14 @@ function canvasCircle(ctx, x, y, r, startAngle, endAngle, style, isFill){
 }
 
 function drawPixel(x, y, rgba){
-	var index = (x + y * canvas.width) * 4;
-	canvasData[index + 0] = rgba.r;
-	canvasData[index + 1] = rgba.g;
-	canvasData[index + 2] = rgba.b;
-	canvasData[index + 3] = rgba.a;
+	var index = (x + y * canvasData.width) * 4;
+	canvasData.data[index + 0] = rgba.r;
+	canvasData.data[index + 1] = rgba.g;
+	canvasData.data[index + 2] = rgba.b;
+	canvasData.data[index + 3] = rgba.a;
 }
 
-function drawPixel(data, rgba){
+function drawPixelRect(data, rgba){
 	content.strokeStyle = rgba;
 	content.strokeRect(data.x, data.y, 1, 1);
 }
@@ -41,5 +41,5 @@ function rgbToHex(r, g, b) {
 }
 
 function updateCanvas(){
-	content.putImageData(canvasData, 0, 0);
+	content.putImageData(canvasData, 0, 0, 0, 0, canvasData.width, canvasData.height);
 }

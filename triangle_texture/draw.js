@@ -12,7 +12,7 @@ function Interpolate(min, max, gradient){
 };
 
 // Rasterização em X
-function processScanLine(data, pa, pb, pc, pd, color){
+function processScanLine(data, pa, pb, pc, pd){
 	// Calcula o gradient nos pontos Y tanto para achar os pontos startX e endX (0 a 1)
 	var gradient1 = pa.y != pb.y ? (data.y - pa.y) / (pb.y - pa.y) : 1;
 	var gradient2 = pc.y != pd.y ? (data.y - pc.y) / (pd.y - pc.y) : 1;
@@ -39,11 +39,11 @@ function processScanLine(data, pa, pb, pc, pd, color){
  		var z = Interpolate(startZ, endZ, gradient);
 		
 		var u = Interpolate(startU, endU, gradient);
-        var v = Interpolate(startV, endV, gradient); // Sempre vai ser igual ....
+        var v = Interpolate(startV, endV, gradient);
 		
 		rgba = Map(u, v);
-
-		drawPixel({x:x, y:data.y}, rgbToHex(rgba.r, rgba.g, rgba.b));
+		drawPixel(parseInt(x), data.y, rgba);
+		//drawPixelRect({x:x, y:data.y}, rgbToHex(rgba.r, rgba.g, rgba.b));
 	}
 };
 
@@ -72,7 +72,7 @@ function orderVertices(v1, v2, v3){
 
 // Para mais informações, segue o site abaixo ...
 // https://www.davrous.com/2013/06/21/tutorial-part-4-learning-how-to-write-a-3d-software-engine-in-c-ts-or-js-rasterization-z-buffering/
-function drawTriangle(v1, v2, v3, color){
+function drawTriangle(v1, v2, v3){
 	vertices = orderVertices(v1, v2, v3);
 	v1 = vertices[0];
 	v2 = vertices[1];
@@ -110,11 +110,11 @@ function drawTriangle(v1, v2, v3, color){
 		for(var y = parseInt(v1.y); y < parseInt(v3.y); y++){
 			// se o y for menor que p2.y, está na parte de baixo do polygon
 			if(y < v2.y){
-				processScanLine({y:y}, v1, v3, v1, v2, rgbToHex(255, 0, 0));
+				processScanLine({y:y}, v1, v3, v1, v2);
 			}
 			// se o y for maior que p2.y, estamos na parte de cima do polygon
 			else{
-				processScanLine({y:y}, v1, v3, v2, v3, rgbToHex(0, 255, 0));
+				processScanLine({y:y}, v1, v3, v2, v3);
 			}
 		}
 	}
@@ -132,9 +132,9 @@ function drawTriangle(v1, v2, v3, color){
 	else{
 		for(var y = parseInt(v1.y); y < parseInt(v3.y); y++){
 			if(y < v2.y){
-				processScanLine({y:y}, v1, v2, v1, v3, rgbToHex(255, 0, 0));
+				processScanLine({y:y}, v1, v2, v1, v3);
 			}else{
-				processScanLine({y:y}, v2, v3, v1, v3, rgbToHex(0, 255, 0));
+				processScanLine({y:y}, v2, v3, v1, v3);
 			}
 		}
 	}
@@ -143,13 +143,13 @@ function drawTriangle(v1, v2, v3, color){
 // Mapping U V na textura
 function Map(u, v){
 	if(texture_data == null){
-		return rgbToHex(255, 255, 255);
+		return {r:0, g:0, b:0, a:255};
 	}
 	
 	var u = Math.abs(parseInt(u * texture_data.width) % texture_data.width);
 	var v = Math.abs(parseInt(v * texture_data.height) % texture_data.height);
 	
-	var rgba = getPixel(texture_data, u, v);
+	var rgba = getPixel(texture_data, parseInt(u), parseInt(v));
 	return rgba;
 };
 
@@ -165,7 +165,9 @@ function draw(content){
 	var v2 = {x: 1, y: 0, z: 0, CoordUV:{u:1, v:1}};
 	var v3 = {x: 0, y: 0, z: 0, CoordUV:{u:0, v:1}};*/
 	
-	drawTriangle(v1, v2, v3, 0);
+	canvasData = content.getImageData(0, 0, canvas.width, canvas.height);
+	drawTriangle(v1, v2, v3);
+	updateCanvas();
 	
 	/*var y = 0.25;
 	var factor = (y - v1.y) / (v2.y - v1.y);
@@ -173,7 +175,7 @@ function draw(content){
 	var startX = Interpolate(v1.x, v2.x, factor);
 	var endX = Interpolate(v1.x, v3.x, factor);
 	
-	console.log("Y: " + y + "  "+ startX, endX, factor);*/
+	console.log("Y: " + y + "  " + startX, endX, factor);*/
 	
 	content.font = "10px Arial";
 	content.fillStyle = rgbToHex(255, 0, 0);
@@ -192,7 +194,6 @@ function draw(content){
 	
 	content.stroke();
 	
-	
 	// DESENHA UM CIRCULO MOVENDO-SE JUNTO COM O MOUSE
 	// canvasCircle(x, y, r, startAngle, endAngle, style, isFill)
 	canvasCircle(content, Mouse.x, Mouse.y, 2, 0, 2*Math.PI, "#dd3838", true);
@@ -200,4 +201,5 @@ function draw(content){
 	// EXIBE O FPS NA TELA
 	// canvasText(ctx, text, x, y, style, font, align)
 	canvasText(content, "FPS " + fps_state, 30, 30, "blue", "12px Arial", "center");
+
 }
